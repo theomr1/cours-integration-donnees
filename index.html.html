@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intégration de Données — M2 MIAGE IPM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --navy: #0b1829;
+      --navy-mid: #132238;
+      --navy-light: #1e3a5f;
+      --gold: #f0a500;
+      --gold-light: #ffd166;
+      --teal: #0d9488;
+      --cream: #fafaf8;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: #1a2332; margin: 0; }
+    h1, h2, h3 { font-family: 'DM Serif Display', serif; }
+    .sidebar { background: var(--navy); min-height: 100vh; }
+    .nav-btn { transition: all .2s; border-left: 3px solid transparent; }
+    .nav-btn.active { background: var(--navy-light); border-left-color: var(--gold); }
+    .nav-btn:hover:not(.active) { background: var(--navy-mid); border-left-color: rgba(240,165,0,.4); }
+    .card { background: white; border-radius: 12px; border: 1px solid #e8eaf0; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .badge-piege { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 20px; padding: 2px 10px; font-size: .75rem; font-weight: 600; }
+    .badge-key { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; border-radius: 20px; padding: 2px 10px; font-size: .75rem; font-weight: 600; }
+    .quiz-btn { transition: all .2s; border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; text-align: left; width: 100%; cursor: pointer; background: white; }
+    .quiz-btn:hover:not(:disabled) { border-color: #6366f1; background: #f5f3ff; }
+    .quiz-btn.correct { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
+    .quiz-btn.wrong { border-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
+    .quiz-btn.reveal-correct { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
+    .quiz-btn:disabled { cursor: default; }
+    .progress-bar { height: 6px; background: rgba(255,255,255,.15); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width .4s ease; }
+    .abbr-tag { display: inline-block; background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; border-radius: 6px; padding: 2px 8px; font-size: .8rem; font-weight: 600; margin: 2px 3px; }
+    .tab-btn { border-radius: 8px; padding: 6px 14px; font-size: .85rem; font-weight: 600; transition: all .2s; cursor: pointer; border: 1px solid transparent; }
+    .tab-btn.active { background: #1e3a5f; color: white; }
+    .tab-btn:not(.active) { color: #64748b; }
+    .tab-btn:not(.active):hover { background: #f1f5f9; }
+    details summary { cursor: pointer; list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+    details[open] summary .chevron { transform: rotate(180deg); }
+    .chevron { transition: transform .2s; display: inline-block; }
+    .module-tag { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+    .flip-card { perspective: 1000px; height: 130px; cursor: pointer; }
+    .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+    .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+    .flip-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; padding: 1rem; border-radius: 10px; }
+    .flip-front { background: white; border: 1px solid #e2e8f0; color: #1e40af; font-weight: 700; text-align: center; }
+    .flip-back { background: #1e3a5f; color: white; transform: rotateY(180deg); font-size: .85rem; text-align: center; }
+    @media (max-width: 768px) { .sidebar { min-height: auto; } }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+/* ============================================================
+   DONNÉES DU COURS — Intégration de Données M2 MIAGE IPM
+   ============================================================ */
+
+const modules = [
+
+  /* ─── MODULE 1 ─────────────────────────────────────────── */
+  {
+    id: "m1",
+    title: "Contexte & Fondamentaux",
+    subtitle: "Pourquoi intégrer ? Les défis de la multi-source",
+    color: "#1e3a5f",
+    emoji: "🗄️",
+    content: {
+      sections: [
+        {
+          title: "Contexte actuel",
+          type: "text",
+          body: "L'omniprésence des outils informatiques entraîne une prolifération des données. La gestion traditionnelle reposait sur des bases de données homogènes (modèle/schéma uniques) et une architecture centralisée. Aujourd'hui, les entreprises doivent gérer un mélange de données provenant de sources nombreuses et variées : SGBD relationnels, NoSQL, fichiers, Open Data, Linked Data — avec des interfaces d'accès différentes (SQL, Cypher, SPARQL, JDBC, HTTP…)."
+        },
+        {
+          title: "Objectif de l'intégration de données",
+          type: "definition",
+          body: "Utiliser les données multi-sources comme si elles étaient dans une seule source homogène. L'intégration doit fournir un accès uniforme (comme une seule BD homogène) à des sources multiples, autonomes et hétérogènes, sans affecter leur comportement propre."
+        },
+        {
+          title: "Les 3 Grands Défis de l'Intégration",
+          type: "timeline",
+          items: [
+            { color: "#3b82f6", title: "Distribution", text: "Les données sont stockées sur des supports répartis physiquement et géographiquement. Aucune source ne détient la totalité de l'information." },
+            { color: "#f59e0b", title: "Autonomie", text: "Chaque source décide de son propre modèle de données et langage d'interrogation, quand et comment répondre, et de l'ordre d'exécution des opérations locales. On ne peut pas la forcer." },
+            { color: "#ef4444", title: "Hétérogénéité", text: "Sémantique (le même mot recouvre des significations différentes), syntaxique (06 12 34 56 78 vs +33 6-12-34-56-78), schéma/structure (first name + last name vs full name), et technique (différents logiciels)." }
+          ]
+        },
+        {
+          title: "⚠️ Piège : Distribution ≠ Hétérogénéité",
+          type: "warning",
+          body: "La DISTRIBUTION concerne l'emplacement physique des données (réparties géographiquement). L'HÉTÉROGÉNÉITÉ concerne les différences de format, de schéma ou de sens. Une source peut être distribuée sans être hétérogène (réplication d'une même BD sur plusieurs serveurs) et inversement."
+        },
+        {
+          title: "4 Types d'Hétérogénéité",
+          type: "accordion",
+          items: [
+            { title: "Sémantique", content: "Un même terme peut recouvrir des concepts différents selon les sources. Ex : 'Java' peut désigner un langage de programmation (fiche APEC) ou une préférence de café (boutique café). L'hétérogénéité sémantique est la plus difficile à résoudre automatiquement." },
+            { title: "Syntaxique", content: "Les mêmes données sont représentées sous des formats différents. Ex : 06 12 34 56 78 vs +33 6-12-34-56-78. Le sens est identique mais la forme varie." },
+            { title: "Schéma / Structure", content: "Les données sont organisées différemment selon la source. Ex : 'Nom' + 'Prénom' séparés vs 'Nom complet' dans un seul champ. La décomposition des entités varie." },
+            { title: "Technique", content: "Les données sont gérées par des logiciels ou systèmes différents (SGBD relationnels, NoSQL, fichiers CSV, API REST, etc.) qui ont des interfaces d'accès incompatibles." }
+          ]
+        },
+        {
+          title: "Exemple concret : deux fiches pour la même personne",
+          type: "two-col",
+          items: [
+            { label: "📋 Fiche APEC", text: "Nom: SONG / Prénom: Jiefu / Age: 33 / Tel: +33 6 60 06 60 06 / Compétence: Java / Domicile: 1 place du Capitole, 31000 Toulouse" },
+            { label: "☕ Fiche boutique café", text: "Nom: SONG Jiefu / Age: 33 ans / Tel: 06 60 06 60 06 / Préférence: Java / Adresse livraison: 1 place du Capitole, 31000 Toulouse" }
+          ]
+        }
+      ]
+    },
+    quiz: [
+      { q: "L'objectif de l'intégration de données est de dupliquer toutes les données dans une base centrale unique.", a: false, piege: true, expl: "FAUX. L'objectif est d'utiliser les données multi-sources COMME SI elles étaient dans une seule source homogène — pas forcément de les dupliquer physiquement. Il existe des approches virtuelles qui laissent les données dans leurs sources d'origine." },
+      { q: "La distribution et l'hétérogénéité sont deux défis distincts de l'intégration de données.", a: true, piege: false, expl: "VRAI. La distribution concerne l'emplacement physique/géographique des données. L'hétérogénéité concerne les différences de format, schéma et sens. Une source peut être distribuée sans être hétérogène, et inversement." },
+      { q: "L'hétérogénéité sémantique signifie que les données sont stockées dans des formats de fichiers différents.", a: false, piege: true, expl: "FAUX. L'hétérogénéité SYNTAXIQUE concerne les formats de représentation (06 12 vs +33 6). L'hétérogénéité SÉMANTIQUE concerne le sens : un même terme peut désigner des choses différentes selon la source (ex : 'Java' = langage de programmation ou café)." },
+      { q: "L'autonomie des sources signifie qu'on ne peut pas les forcer à changer leur modèle de données.", a: true, piege: false, expl: "VRAI. L'autonomie implique que chaque source décide de son propre modèle, langage d'interrogation et ordre d'exécution des opérations. Le système d'intégration doit s'adapter aux sources, pas l'inverse." },
+      { q: "Dans un contexte multi-sources, il est possible d'obtenir un accès uniforme aux données sans affecter le comportement des sources.", a: true, piege: false, expl: "VRAI. C'est précisément l'un des objectifs de l'intégration : fournir un accès uniforme à des sources autonomes, sans modifier leur fonctionnement interne." },
+      { q: "L'hétérogénéité de schéma est le problème le plus difficile à résoudre dans l'intégration de données.", a: false, piege: true, expl: "C'est discutable mais selon le cours, l'hétérogénéité SÉMANTIQUE (même mot, sens différent) est la plus difficile à résoudre automatiquement, car elle nécessite une compréhension du contexte métier qui ne peut pas toujours être inférée des données elles-mêmes." },
+      { q: "La gestion traditionnelle des données reposait sur une architecture distribuée et des bases hétérogènes.", a: false, piege: false, expl: "FAUX. C'est l'inverse : la gestion traditionnelle reposait sur des bases de données HOMOGÈNES (modèle/schéma uniques) et une architecture CENTRALISÉE. C'est l'évolution actuelle qui amène la distribution et l'hétérogénéité." },
+      { q: "Deux systèmes peuvent utiliser le même format de données et présenter quand même une hétérogénéité.", a: true, piege: false, expl: "VRAI. Même si le format syntaxique est identique (ex : deux CSV), il peut y avoir une hétérogénéité sémantique (le champ 'Java' ne signifie pas la même chose dans les deux fichiers) ou de schéma (les colonnes sont structurées différemment)." },
+      { q: "L'intégration de données ne concerne que les bases de données relationnelles.", a: false, piege: false, expl: "FAUX. L'intégration de données concerne toutes les sources d'information : SGBD relationnels, NoSQL, fichiers, plateformes SaaS, Open Data, Linked Data, APIs, etc." },
+      { q: "La prolifération des données est une conséquence directe de l'omniprésence des outils informatiques.", a: true, piege: false, expl: "VRAI. C'est le contexte présenté en cours : l'omniprésence des outils informatiques → prolifération des données → nécessité d'intégrer des sources multiples et hétérogènes." }
+    ]
+  },
+
+  /* ─── MODULE 2 ─────────────────────────────────────────── */
+  {
+    id: "m2",
+    title: "Approches d'Intégration",
+    subtitle: "Des 5 niveaux d'intégration aux avantages/inconvénients",
+    color: "#7c3aed",
+    emoji: "🔀",
+    content: {
+      sections: [
+        {
+          title: "L'intégration peut avoir lieu à différents niveaux",
+          type: "text",
+          body: "Il existe plusieurs niveaux auxquels l'intégration peut s'opérer : de la simple juxtaposition manuelle jusqu'à l'intégration physique en passant par des middlewares ou des vues virtuelles. Chaque niveau correspond à un degré croissant d'automatisation et de couplage."
+        },
+        {
+          title: "Intégration Manuelle",
+          type: "info",
+          body: "Un Data Manager interagit avec toutes les sources, collecte et nettoie manuellement les données. Idéal pour des cas ponctuels dans une petite organisation avec peu de données. Devient rapidement peu pratique pour des intégrations complexes ou récurrentes en raison du processus manuel fastidieux."
+        },
+        {
+          title: "Interface Utilisateur Commune (Common User Interface)",
+          type: "info",
+          body: "Similaire à l'intégration manuelle, mais avec une interface commune (navigateur web, GUI dédiée). Les données sont toujours présentées séparément et l'homogénéisation reste manuelle. Exemple : une recherche sur Google qui agrège des résultats mais les présente séparément."
+        },
+        {
+          title: "Intégration par Applications (Enterprise Application Integration)",
+          type: "compare",
+          left: { label: "✅ Avantages", text: "Processus simplifiés car une application effectue automatiquement tout le travail : localisation, extraction, nettoyage et intégration des données." },
+          right: { label: "❌ Inconvénients", text: "Approche non standardisée et variable selon les entreprises. Connaissances métiers et techniques requises. Les applications deviennent de plus en plus lourdes à mesure que les formats augmentent." }
+        },
+        {
+          title: "Intégration par Middleware",
+          type: "compare",
+          left: { label: "✅ Avantages", text: "Le middleware effectue l'intégration de façon automatique et répétable. Idéal pour les entreprises qui travaillent avec des legacy systems ET des systèmes modernes." },
+          right: { label: "❌ Inconvénients", text: "Doit être déployé et maintenu par un développeur technique. Principalement un outil de communication : capacités limitées en matière d'analyse de données." }
+        },
+        {
+          title: "Accès Uniforme (Intégration Virtuelle / Logique)",
+          type: "compare",
+          left: { label: "✅ Avantages", text: "Pas besoin de créer un emplacement distinct pour stocker les données. Crée une apparence uniforme pour l'utilisateur final. Les données restent dans leur source d'origine." },
+          right: { label: "❌ Inconvénients", text: "Les systèmes hôtes ne sont pas conçus pour gérer la quantité et fréquence des demandes. L'accès, l'homogénéisation et l'intégration doivent être effectués à l'exécution, ce qui prend du temps." }
+        },
+        {
+          title: "Stockage Commun (Intégration Physique)",
+          type: "compare",
+          left: { label: "✅ Avantages", text: "Le système hôte ne gère plus les requêtes en permanence. Amélioration des performances d'analyse, même pour des requêtes complexes." },
+          right: { label: "❌ Inconvénients", text: "Nécessite un data store puissant pour stocker la copie des données. Requiert des experts techniques pour mettre en place, superviser et maintenir l'intégration." }
+        },
+        {
+          title: "⚠️ Piège : Intégration Manuelle ≠ Interface Utilisateur Commune",
+          type: "warning",
+          body: "L'intégration manuelle se fait sans outil spécifique : l'utilisateur interagit directement avec chaque source. L'interface utilisateur commune fournit UN SEUL point d'entrée graphique mais les données restent séparées et l'intégration reste manuelle. La différence est l'existence d'une interface unifiée, pas le degré d'automatisation."
+        },
+        {
+          title: "Dans le cadre du cours : focus sur les niveaux Données",
+          type: "info",
+          body: "Le cours se concentre sur les deux niveaux les plus bas du schéma d'intégration : l'Accès Uniforme aux Données (Uniform Data Access / intégration virtuelle) et le Stockage de Données Commun (Common Data Storage / intégration physique). Ce sont les approches les plus techniques et les plus pertinentes pour le profil MIAGE."
+        }
+      ]
+    },
+    quiz: [
+      { q: "Dans l'approche d'intégration par interface utilisateur commune, l'intégration des données est automatisée.", a: false, piege: true, expl: "FAUX. Dans l'approche par interface utilisateur commune, une interface unifiée permet d'accéder à plusieurs sources, mais l'homogénéisation et l'intégration des données restent MANUELLES. Ce n'est pas parce qu'il y a une interface commune que les données sont automatiquement intégrées." },
+      { q: "L'intégration par middleware est idéale pour les entreprises utilisant à la fois des legacy systems et des systèmes modernes.", a: true, piege: false, expl: "VRAI. Le middleware agit comme un pont entre des systèmes hétérogènes, anciens et modernes, en normalisant les échanges. C'est son principal point fort dans les contextes de transformation numérique progressive." },
+      { q: "Dans l'approche d'accès uniforme aux données, une copie des données est créée dans un entrepôt central.", a: false, piege: true, expl: "FAUX. C'est précisément la différence avec le stockage commun. Dans l'accès uniforme (intégration VIRTUELLE), les données RESTENT dans leurs sources d'origine. C'est une vue logique unifiée, pas une copie physique." },
+      { q: "L'intégration par applications présente l'inconvénient de devenir de plus en plus lourde à maintenir.", a: true, piege: false, expl: "VRAI. Plus le nombre de sources et de formats augmente, plus les applications d'intégration deviennent complexes à maintenir. Chaque nouveau format ou nouvelle source nécessite des développements supplémentaires." },
+      { q: "L'intégration physique (stockage commun) offre de meilleures performances analytiques que l'intégration virtuelle.", a: true, piege: false, expl: "VRAI. En intégration physique, les données sont déjà copiées et transformées dans l'entrepôt. Les requêtes analytiques opèrent sur des données locales et pré-traitées, ce qui est nettement plus rapide qu'aller interroger les sources à chaque requête." },
+      { q: "L'intégration manuelle est adaptée à des cas d'usage récurrents et à fort volume de données.", a: false, piege: false, expl: "FAUX. L'intégration manuelle est adaptée aux cas PONCTUELS et aux petites organisations. Pour des intégrations récurrentes ou à fort volume, elle devient rapidement non pratique et source d'erreurs." },
+      { q: "Dans l'approche d'accès uniforme, les systèmes hôtes peuvent être surchargés par les requêtes.", a: true, piege: false, expl: "VRAI. C'est un des inconvénients majeurs de l'intégration virtuelle : les systèmes hôtes, qui n'ont pas été conçus pour gérer un afflux constant de requêtes externes, peuvent être surchargés, entraînant des délais importants." },
+      { q: "Le middleware possède de fortes capacités d'analyse de données.", a: false, piege: false, expl: "FAUX. Le middleware est avant tout un outil de COMMUNICATION et d'intégration. Il a des capacités limitées en matière d'analyse de données. Pour l'analyse, on aura recours à des entrepôts de données ou des outils BI." },
+      { q: "Rechercher sur Google est un exemple d'intégration manuelle.", a: false, piege: true, expl: "FAUX. Google est un exemple d'Interface Utilisateur COMMUNE. Une interface unique (le moteur de recherche) présente des résultats de sources multiples, mais l'utilisateur fait le travail de synthèse. L'intégration manuelle n'implique pas d'interface commune." },
+      { q: "Le cours se concentre sur les approches d'intégration au niveau des données (accès uniforme et stockage commun).", a: true, piege: false, expl: "VRAI. Le cours se focalise sur les deux niveaux les plus bas du schéma : Uniform Data Access (intégration virtuelle) et Common Data Storage (intégration physique), qui sont les approches les plus techniques et étudiées en MIAGE." }
+    ]
+  },
+
+  /* ─── MODULE 3 ─────────────────────────────────────────── */
+  {
+    id: "m3",
+    title: "Architectures & Méthodes",
+    subtitle: "ETL, ODS, DSA, EII — les outils de l'intégration physique et virtuelle",
+    color: "#0369a1",
+    emoji: "⚙️",
+    content: {
+      sections: [
+        {
+          title: "Architecture pour l'intégration physique — Entrepôt de données",
+          type: "text",
+          body: "Les données provenant des sources sont transformées et stockées sur un support spécifique (l'entrepôt de données). L'interrogation s'effectue ensuite comme sur une BD classique. Le processus correspond à une migration de données vers l'entrepôt via des chargeurs."
+        },
+        {
+          title: "Architecture pour l'intégration virtuelle — Médiateur/Adaptateur",
+          type: "text",
+          body: "Les données restent dans leurs sources. Les requêtes sont exprimées sur un schéma global, puis décomposées en sous-requêtes envoyées aux sources via des adaptateurs. Les résultats sont combinés par le médiateur pour former la réponse finale. C'est une migration de requêtes (et non de données) vers les sources."
+        },
+        {
+          title: "Physique vs Virtuelle",
+          type: "compare",
+          left: { label: "🏗️ Intégration Physique (Entrepôt)", text: "Les données sont copiées et transformées dans l'entrepôt. Interrogation locale rapide. Latence entre les données sources et l'entrepôt. Nécessite espace disque et maintenance." },
+          right: { label: "🔮 Intégration Virtuelle (Médiateur)", text: "Les données restent dans les sources. Accès temps-réel. Les systèmes sources subissent la charge des requêtes. Transformations limitées à l'exécution." }
+        },
+        {
+          title: "ETL — Extract, Transform, Load",
+          type: "definition",
+          body: "Méthode principale pour l'intégration physique. Extraction : identifier et extraire les données modifiées depuis la dernière exécution. Transformation : nettoyer, intégrer et agréger. Chargement : insérer les données transformées dans l'entrepôt et gérer les changements. Traite normalement de grandes quantités de données de manière périodique (par lots)."
+        },
+        {
+          title: "ETL — Avantages et Inconvénients",
+          type: "accordion",
+          items: [
+            { title: "✅ Avantages de l'ETL", content: "Optimisé pour la structure de l'entrepôt. Traitement par lot de grandes quantités. Transformations complexes et agrégations possibles. Outils graphiques disponibles sur le marché. Réutilisation des processus." },
+            { title: "❌ Inconvénients de l'ETL", content: "Processus de développement long et coûteux. Gestion des changements nécessaire. Exige de l'espace disque (staging area). Latence des données entre la source et l'entrepôt. Unidirectionnel (des sources vers l'entrepôt uniquement)." }
+          ]
+        },
+        {
+          title: "ODS — Operational Data Store",
+          type: "info",
+          body: "Base de données intermédiaire contenant des extraits temporaires des sources hétérogènes. Sert de zone d'attente provisoire avant intégration dans l'entrepôt. Stockage non permanent et optionnel. Utile pour des volumes importants nécessitant des transformations complexes (agrégation), ou quand les données proviennent de plusieurs sources à des moments différents."
+        },
+        {
+          title: "DSA — Data Staging Area",
+          type: "info",
+          body: "Zone de stockage temporaire pour les données extraites des sources. Les données y sont nettoyées, normalisées, enrichies et structurées (tables proches du schéma de l'entrepôt). Sert de zone tampon pour le traitement. Utilisée quand la quantité de données est trop importante pour être traitée en RAM."
+        },
+        {
+          title: "⚠️ Piège : ODS ≠ DSA",
+          type: "warning",
+          body: "L'ODS (Operational Data Store) est une base intermédiaire qui stocke les extraits sources temporairement, souvent dans un format proche des sources. Le DSA (Data Staging Area) est une zone tampon où les données sont pré-transformées dans un format proche de l'entrepôt cible. L'ODS précède souvent le DSA dans le pipeline ETL."
+        },
+        {
+          title: "EII — Enterprise Information Integration (Intégration Virtuelle)",
+          type: "accordion",
+          items: [
+            { title: "Principe", content: "Fournit une vue unifiée des données via une BD virtuelle, de manière transparente aux applications. Une couche de métadonnées définit 'comment et où' obtenir les données. Consolide uniquement les données utilisées, au moment où elles sont utilisées (source data pulling)." },
+            { title: "✅ Avantages de l'EII", content: "Aucun déplacement de données. Accès temps-réel. Accès 'relationnel' à des sources non-relationnelles. Accélère le déploiement. Peut être réutilisé par le système ETL dans une itération future." },
+            { title: "❌ Inconvénients de l'EII", content: "Requiert la correspondance source à source. Surtaxe les systèmes sources. Plus limité que l'ETL en volume. Transformations limitées. Peut consommer une grande bande passante. Délais importants pour le traitement en ligne." }
+          ]
+        },
+        {
+          title: "Flux de données dans une architecture ETL complète",
+          type: "timeline",
+          items: [
+            { color: "#6366f1", title: "Sources opérationnelles (OLTP)", text: "Bases transactionnelles de l'entreprise : ERP, CRM, fichiers, SaaS. Données en temps-réel mais pas conçues pour l'analyse." },
+            { color: "#8b5cf6", title: "ODS (optionnel)", text: "Zone d'attente provisoire. Consolide les extraits de sources arrivant à des moments différents avant transformation." },
+            { color: "#a855f7", title: "DSA / Staging", text: "Zone de transformation. Nettoyage, normalisation, enrichissement. Tables structurées proches du schéma cible." },
+            { color: "#0d9488", title: "Entrepôt de données (DW)", text: "Destination finale. Optimisé pour les requêtes analytiques. Utilisé pour le reporting, la BI, le machine learning." }
+          ]
+        }
+      ]
+    },
+    quiz: [
+      { q: "Dans l'architecture d'intégration virtuelle, les données sont copiées dans un entrepôt central.", a: false, piege: true, expl: "FAUX. Dans l'architecture virtuelle (médiateur/wrapper), les données RESTENT dans leurs sources d'origine. Les requêtes sont décomposées et envoyées aux sources, puis les résultats sont combinés. C'est l'architecture PHYSIQUE (entrepôt) qui implique une copie des données." },
+      { q: "L'ETL est unidirectionnel : des sources vers l'entrepôt.", a: true, piege: false, expl: "VRAI. C'est un des inconvénients de l'ETL : il fonctionne uniquement dans le sens sources → entrepôt. Il ne permet pas d'écriture en retour vers les sources d'origine." },
+      { q: "L'ODS et le DSA sont deux termes désignant exactement la même chose.", a: false, piege: true, expl: "FAUX. L'ODS (Operational Data Store) est une base intermédiaire pour les extraits temporaires des sources. Le DSA (Data Staging Area) est une zone de transformation où les données sont pré-structurées proches du schéma de l'entrepôt cible. Les deux sont des étapes distinctes dans le pipeline ETL." },
+      { q: "L'EII permet un accès temps-réel aux données.", a: true, piege: false, expl: "VRAI. C'est l'un des grands avantages de l'EII (intégration virtuelle) : les données sont interrogées directement dans leurs sources au moment de la requête, ce qui garantit un accès aux données les plus récentes." },
+      { q: "L'ETL gère de grandes quantités de données en temps-réel.", a: false, piege: true, expl: "FAUX. L'ETL traite normalement de grandes quantités de données de manière PÉRIODIQUE (par lots). C'est précisément l'un de ses inconvénients : il y a une LATENCE entre les données dans les sources et celles dans l'entrepôt." },
+      { q: "Le DSA est obligatoire dans tout pipeline ETL.", a: false, piege: false, expl: "FAUX. Le DSA (comme l'ODS) est OPTIONNEL. Si la quantité de données à traiter est faible, RAM + programme suffisent. Le DSA n'est nécessaire que pour des volumes importants ne pouvant pas être traités directement en mémoire." },
+      { q: "L'EII surtaxe les systèmes sources.", a: true, piege: false, expl: "VRAI. C'est un inconvénient majeur de l'EII : les systèmes hôtes (sources) n'ont pas été conçus pour gérer la fréquence des requêtes externes. En cas de sollicitations importantes, ils peuvent être surchargés." },
+      { q: "L'architecture physique (entrepôt) offre de meilleures performances analytiques que l'architecture virtuelle.", a: true, piege: false, expl: "VRAI. Dans l'architecture physique, les données sont déjà transformées et stockées dans l'entrepôt, optimisé pour les requêtes analytiques. Dans l'architecture virtuelle, le traitement se fait à l'exécution, ce qui entraîne des délais." },
+      { q: "L'ETL peut effectuer des transformations complexes et des agrégations sur les données.", a: true, piege: false, expl: "VRAI. C'est l'un des avantages de l'ETL : la phase de Transformation peut inclure des opérations complexes comme l'agrégation, le nettoyage, le déduplication, la normalisation, etc., avant chargement dans l'entrepôt." },
+      { q: "Dans l'architecture virtuelle, le médiateur décompose les requêtes en sous-requêtes envoyées aux sources via des adaptateurs.", a: true, piege: false, expl: "VRAI. C'est le fonctionnement de l'architecture mediator/wrapper : le médiateur reçoit une requête globale, la décompose selon le schéma de chaque source, envoie les sous-requêtes via les adaptateurs, puis fusionne les résultats." }
+    ]
+  },
+
+  /* ─── MODULE 4 ─────────────────────────────────────────── */
+  {
+    id: "m4",
+    title: "Data Matching — Introduction",
+    subtitle: "Définition, fitness for use et cycle d'amélioration",
+    color: "#b45309",
+    emoji: "🔍",
+    content: {
+      sections: [
+        {
+          title: "Définition du Data Matching",
+          type: "definition",
+          body: "Le Data Matching est la tâche consistant à trouver dans un ensemble de données les enregistrements (records) qui font référence à la même entité dans différentes sources de données. Il est nécessaire quand on joint des datasets basés sur des entités qui peuvent ou non partager un identifiant commun."
+        },
+        {
+          title: "Nombreux synonymes",
+          type: "flip-cards",
+          items: [
+            { front: "Record Linkage", back: "Terme académique classique. Lier des enregistrements de sources différentes." },
+            { front: "Entity Resolution", back: "Résoudre l'ambiguïté : plusieurs descriptions → une seule entité réelle." },
+            { front: "De-duplication", back: "Détecter et fusionner les doublons au sein d'une même source." },
+            { front: "Object Identification", back: "Identifier qu'un même objet du monde réel correspond à plusieurs records." }
+          ]
+        },
+        {
+          title: "Principe fondamental : Fitness for Use (Aptitude à l'emploi)",
+          type: "accordion",
+          items: [
+            { title: "Un matching parfait est impossible", content: "Un matching sans faille — situation dans laquelle toutes les données sont alignées à 100% — est impossible à atteindre dans la pratique. Il y aura toujours des erreurs résiduelles." },
+            { title: "La qualité = adéquation aux besoins", content: "La qualité du matching ne renvoie pas à la perfection, mais à son adéquation relative à un ensemble de besoins donnés. Un matching 'bon' est suffisamment précis pour le contexte métier visé." },
+            { title: "La tolérance à l'erreur est variable", content: "La tolérance aux erreurs de matching variera selon les enjeux. Un matching médical (données patient) tolère moins d'erreurs qu'un matching marketing (préférences client)." },
+            { title: "Arbitrage coût-bénéfice", content: "On se trouve toujours face à un arbitrage coût-bénéfice. Améliorer la précision du matching a un coût (humain, computationnel) qu'il faut comparer au bénéfice attendu." },
+            { title: "Amélioration continue", content: "Viser la qualité du matching doit constituer un processus continu d'amélioration, pas une opération ponctuelle." }
+          ]
+        },
+        {
+          title: "⚠️ Piège : Chercher la perfection",
+          type: "warning",
+          body: "On ne cherche PAS un matching parfait (impossible). On cherche un matching ADAPTÉ aux besoins et aux enjeux. Un matching à 98% peut être excellent pour une campagne marketing mais inacceptable pour un dossier médical. La tolérance à l'erreur est contextuelle et définie par les parties prenantes."
+        },
+        {
+          title: "Le Cycle d'Amélioration — Plan du cours",
+          type: "timeline",
+          items: [
+            { color: "#3b82f6", title: "1. Profiling", text: "Audit formel de données en vue de tester leur adéquation aux métadonnées correspondantes. Découvrir la structure, le contenu et la qualité réels." },
+            { color: "#8b5cf6", title: "2. Standardisation", text: "Pré-traitement qui s'assure que toutes les données soient encodées suivant les mêmes conventions, y compris pour les types complexes (adresses, noms)." },
+            { color: "#ef4444", title: "3. Matching", text: "Comparaison d'enregistrements en vue de détecter les incohérences ou doublons et d'en améliorer la qualité." },
+            { color: "#10b981", title: "4. Monitoring", text: "Suivi dans le temps des indicateurs de qualité spécifiés à l'aide des méthodes 1 à 3. Processus continu et automatisé." }
+          ]
+        },
+        {
+          title: "Pourquoi le Data Matching est-il nécessaire ?",
+          type: "text",
+          body: "Lors de l'intégration de données multi-sources, les mêmes entités du monde réel peuvent être représentées différemment dans chaque source (voir exemple APEC/boutique café). Sans data matching, on risque de créer des doublons ou de rater des correspondances, ce qui fausse les analyses et décisions."
+        }
+      ]
+    },
+    quiz: [
+      { q: "Le Data Matching vise à obtenir un alignement parfait de 100% des données.", a: false, piege: true, expl: "FAUX. Selon le principe fondamental 'fitness for use', un matching sans faille est IMPOSSIBLE à atteindre. L'objectif est d'atteindre une qualité ADÉQUATE aux besoins donnés, pas la perfection absolue." },
+      { q: "Record Linkage, Entity Resolution et De-duplication sont des synonymes du Data Matching.", a: true, piege: false, expl: "VRAI. Le Data Matching est aussi connu sous les noms : record linkage, entity resolution, object identification, de-duplication, etc. Ces termes décrivent le même problème sous des angles légèrement différents." },
+      { q: "La tolérance à l'erreur dans le Data Matching est identique quel que soit le domaine d'application.", a: false, piege: false, expl: "FAUX. La tolérance à l'erreur varie selon les enjeux. Un matching dans un contexte médical (dossiers patients) tolère très peu d'erreurs, tandis qu'un matching pour une campagne marketing peut accepter davantage d'imprécisions." },
+      { q: "Le cycle d'amélioration du Data Matching commence par la Standardisation.", a: false, piege: true, expl: "FAUX. Le cycle commence par le PROFILING (audit formel des données), puis la Standardisation, puis le Matching, puis le Monitoring. On ne peut pas standardiser sans avoir d'abord compris la structure et la qualité des données." },
+      { q: "La De-duplication est la détection de doublons au sein d'une même source de données.", a: true, piege: false, expl: "VRAI. La de-duplication est un cas particulier du Data Matching qui s'applique à une seule source pour identifier et fusionner les enregistrements en doublon. Le Record Linkage, lui, s'applique entre plusieurs sources." },
+      { q: "Améliorer la qualité du matching a toujours un coût nul si on utilise les bons algorithmes.", a: false, piege: false, expl: "FAUX. Il y a toujours un arbitrage coût-bénéfice. Améliorer la précision du matching nécessite des ressources : temps de développement, puissance de calcul, vérification manuelle des cas ambigus. Ces coûts doivent être mis en balance avec les bénéfices attendus." },
+      { q: "Le Data Matching est nécessaire uniquement quand les sources partagent un identifiant commun.", a: false, piege: true, expl: "FAUX. C'est exactement l'inverse. Le Data Matching est nécessaire précisément quand les entités peuvent ou non partager un identifiant commun. Si toutes les sources ont un identifiant commun (ex: numéro de sécurité sociale), une simple jointure suffit." },
+      { q: "Le Monitoring est la dernière étape du cycle de Data Matching et consiste à suivre les indicateurs de qualité dans le temps.", a: true, piege: false, expl: "VRAI. Le Monitoring est la 4e et dernière étape du cycle. Il consiste à surveiller de manière automatisée et régulière les indicateurs de qualité, en s'appuyant sur les règles business définies lors du Profiling." },
+      { q: "Le Data Matching peut être utile même si les données à comparer proviennent de la même source.", a: true, piege: false, expl: "VRAI. Dans le cas de la de-duplication, on cherche des doublons au sein d'une même source. Par exemple, le même client inscrit deux fois avec des variantes de son nom ou adresse." },
+      { q: "Le principe 'fitness for use' signifie que la qualité du matching est évaluée selon les besoins spécifiques du contexte.", a: true, piege: false, expl: "VRAI. 'Fitness for use' (aptitude à l'emploi) : la qualité du matching ne renvoie pas à la perfection absolue, mais à son adéquation à un ensemble de besoins donnés. Un bon matching est celui qui répond aux exigences du cas d'usage." }
+    ]
+  },
+
+  /* ─── MODULE 5 ─────────────────────────────────────────── */
+  {
+    id: "m5",
+    title: "Profiling & Standardisation",
+    subtitle: "Auditer et normaliser les données avant le matching",
+    color: "#065f46",
+    emoji: "🔬",
+    content: {
+      sections: [
+        {
+          title: "Profiling — Définition",
+          type: "definition",
+          body: "L'utilisation de techniques analytiques dans le but de découvrir la structure, le contenu et la qualité réels d'une collection de données. Input : données brutes + toutes les métadonnées connues. Output : métadonnées exactes (corrigées et exhaustives) et informations descriptives sur les sources."
+        },
+        {
+          title: "Profiling — Pourquoi ?",
+          type: "two-col",
+          items: [
+            { label: "🔎 Découvrir l'inadéquation", text: "Détecter la présence de données inadéquates (inexactes) ou de métadonnées à corriger. Les problèmes qu'on ne connaît pas ne peuvent pas être corrigés." },
+            { label: "🗂️ Connaître les sources", text: "Découvrir la structure, la qualité et le contenu de chaque source de données. Prérequis indispensable à toute standardisation ou matching." }
+          ]
+        },
+        {
+          title: "Profiling — Comment (3 phases)",
+          type: "timeline",
+          items: [
+            { color: "#6366f1", title: "Préparation", text: "Obtenir les métadonnées existantes ET les données réelles. Les deux sont nécessaires : les métadonnées seules peuvent être incomplètes ou incorrectes." },
+            { color: "#8b5cf6", title: "Analyse", text: "Analyser la structure (colonnes, types, cardinalités) ET les valeurs (distribution, valeurs manquantes, outliers). Ces deux analyses s'alimentent mutuellement." },
+            { color: "#a855f7", title: "Validation", text: "Appliquer les business rules locales (règles simples par colonne) puis les business rules complexes (règles impliquant plusieurs colonnes ou sources). Les problèmes détectés alimentent la correction." }
+          ]
+        },
+        {
+          title: "Raisons d'inadéquation — Métadonnées",
+          type: "accordion",
+          items: [
+            { title: "Métadonnées incomplètes ou inexistantes", content: "Absence totale de description de certaines colonnes ou tables. Sans métadonnées, on ne peut pas valider si les données respectent le schéma attendu." },
+            { title: "Métadonnées erronées ou vagues", content: "Les métadonnées existent mais sont incorrectes (ex : type déclaré INTEGER mais valeurs décimales) ou trop vagues pour être exploitables." },
+            { title: "Métadonnées obsolètes", content: "Les métadonnées décrivent une version ancienne du schéma. La source a évolué sans mise à jour de la documentation." }
+          ]
+        },
+        {
+          title: "Raisons d'inadéquation — Données brutes",
+          type: "accordion",
+          items: [
+            { title: "Données invalides", content: "Valeurs qui ne respectent pas le type attendu (ex : une lettre dans un champ numérique) ou hors du domaine autorisé (ex : âge négatif)." },
+            { title: "Données contradictoires", content: "Valeurs logiquement contradictoires par rapport aux métadonnées ou à d'autres champs (ex : date de naissance postérieure à la date d'embauche)." },
+            { title: "Contenu inattendu", content: "Les données respectent formellement le type mais le contenu diffère de ce qu'on attendait sémantiquement (ex : champ 'préférence' contient 'Java' alors qu'on attendait une boisson)." }
+          ]
+        },
+        {
+          title: "Standardisation — Définition",
+          type: "definition",
+          body: "Disposer d'une convention univoque pour une représentation correcte et uniforme de toutes les données. Input : données brutes + règles de transformation standardisées. Output : données transformées et préparées pour le matching. But : assurer une interopérabilité optimale des données hétérogènes multi-sources grâce à un format cohérent."
+        },
+        {
+          title: "Standardisation — Domaine restreint vs Domaine complexe",
+          type: "compare",
+          left: { label: "🔒 Domaine restreint", text: "Une liste FINIE et exhaustive de valeurs autorisées univoques. Ex : liste exhaustive de codes postaux français. La standardisation consiste à vérifier et corriger les valeurs par rapport à cette liste." },
+          right: { label: "🌀 Domaine complexe", text: "Deux opérations : (1) Parsing — restructurer les champs non structurés en unités significatives. (2) Enrichissement — ajouter de la connaissance via des règles métier (calculs, annotations)." }
+        },
+        {
+          title: "Exemple de standardisation d'un domaine complexe",
+          type: "info",
+          body: "Exemple : '781114-269.56 Yves Bontemps Rue Prince Royal 102 Bruxelles'. Après PARSING : '781114' / '269.56' / 'Yves' / 'Bontemps' / 'Rue Prince Royal' / '102' / 'Bruxelles'. Après ENRICHISSEMENT : déduction du genre (Male) à partir du code, ajout de 'du' entre 'Rue' et 'Prince Royal' selon règle grammaticale."
+        },
+        {
+          title: "⚠️ Ordre obligatoire : Profiling AVANT Standardisation",
+          type: "warning",
+          body: "On ne peut pas standardiser sans avoir d'abord profilé les données. Le profiling révèle les problèmes (structure, valeurs inadéquates, métadonnées manquantes) qui orientent ensuite les règles de standardisation. Sauter le profiling revient à normaliser des données dont on ne connaît pas les vrais problèmes."
+        }
+      ]
+    },
+    quiz: [
+      { q: "Le profiling produit en output des données brutes nettoyées.", a: false, piege: true, expl: "FAUX. Le profiling produit en output des MÉTADONNÉES exactes (corrigées et exhaustives) et des informations descriptives sur les sources. Ce n'est pas le profiling qui nettoie les données mais la standardisation (qui vient après)." },
+      { q: "La standardisation vise à assurer une représentation uniforme de toutes les données.", a: true, piege: false, expl: "VRAI. La standardisation consiste à disposer d'une convention univoque pour une représentation correcte et uniforme de toutes les données, facilitant ainsi leur comparaison lors du matching." },
+      { q: "Le parsing est une opération d'enrichissement des données par ajout de connaissances métier.", a: false, piege: true, expl: "FAUX. Le PARSING consiste à RE-STRUCTURER des champs non structurés en unités significatives. L'ENRICHISSEMENT, lui, consiste à AJOUTER de la connaissance via des règles métier. Ce sont deux opérations distinctes de la standardisation de domaine complexe." },
+      { q: "Des métadonnées peuvent être obsolètes même si elles sont présentes et formellement correctes.", a: true, piege: false, expl: "VRAI. Les métadonnées obsolètes décrivent une version ancienne du schéma. La source a évolué sans mise à jour de la documentation. Elles sont 'présentes' mais ne reflètent plus la réalité des données actuelles." },
+      { q: "La standardisation d'un domaine restreint implique du parsing et de l'enrichissement.", a: false, piege: true, expl: "FAUX. Le parsing et l'enrichissement s'appliquent au DOMAINE COMPLEXE. Pour un domaine RESTREINT, la standardisation consiste simplement à vérifier et corriger les valeurs par rapport à une liste finie et exhaustive de valeurs autorisées." },
+      { q: "Le profiling peut être réalisé sans connaître les métadonnées des sources.", a: false, piege: false, expl: "FAUX. L'input du profiling comprend les données brutes ET toutes les métadonnées connues. Les métadonnées (même imprécises) permettent de définir ce qu'on attend, puis de comparer avec la réalité des données pour détecter les écarts." },
+      { q: "La phase de validation du profiling inclut uniquement des business rules simples.", a: false, piege: false, expl: "FAUX. La validation inclut deux niveaux : business rules LOCALES (simples, par colonne) ET business rules COMPLEXES (impliquant plusieurs colonnes ou sources). Les règles complexes sont souvent les plus importantes métier." },
+      { q: "Un champ dont les valeurs respectent le type déclaré mais ont un contenu sémantiquement inattendu constitue une donnée inadéquate.", a: true, piege: true, expl: "VRAI. C'est le cas 'contenu différent de ce qu'on attendait'. Ex : un champ 'boisson_preferee' contenant 'Java' est formellement valide (type chaîne de caractères) mais sémantiquement problématique si Java désigne le langage de programmation." },
+      { q: "On peut réaliser la standardisation avant le profiling pour gagner du temps.", a: false, piege: false, expl: "FAUX. Le profiling DOIT précéder la standardisation. Le profiling révèle les problèmes réels des données qui orientent ensuite les règles de standardisation. Sans profiling préalable, on risque de standardiser selon des hypothèses fausses." },
+      { q: "La standardisation permet d'assurer une interopérabilité optimale des données hétérogènes multi-sources.", a: true, piege: false, expl: "VRAI. C'est précisément le but de la standardisation : en encodant toutes les données selon les mêmes conventions, on rend possible leur comparaison et leur intégration malgré leur hétérogénéité d'origine." }
+    ]
+  },
+
+  /* ─── MODULE 6 ─────────────────────────────────────────── */
+  {
+    id: "m6",
+    title: "Matching — Couplage",
+    subtitle: "Full Indexing, Blocking et Sorted Neighbourhood",
+    color: "#9f1239",
+    emoji: "🔗",
+    content: {
+      sections: [
+        {
+          title: "Le Matching — Quoi, Pourquoi, Comment",
+          type: "text",
+          body: "QUOI : la recherche de records relatifs à une même entité. POURQUOI : éviter l'introduction de doublons ou incohérences lors de l'intégration de données. COMMENT : couplage + calcul de la similarité. Le couplage constitue l'étape préalable indispensable : il forme les paires de records sur lesquelles on appliquera ensuite les méthodes de similarité."
+        },
+        {
+          title: "Le Couplage — rôle et objectif",
+          type: "info",
+          body: "Avant de calculer la similarité entre tous les records possibles (ce qui serait exponentiel), le couplage réduit le nombre de paires à comparer en ne gardant que les paires candidates plausibles. Trois techniques sont couramment utilisées : Full Indexing, Blocking, Sorted Neighbourhood."
+        },
+        {
+          title: "Full Indexing",
+          type: "definition",
+          body: "Crée toutes les combinaisons possibles de paires de records. Dans le cas de la liaison (linking) entre deux datasets, génère le produit cartésien des deux. Dans le cas de la déduplication d'un dataset, crée les paires définies par la matrice triangulaire supérieure de A×A. Exhaustif mais coûteux en calcul."
+        },
+        {
+          title: "⚠️ Full Indexing : Coût Quadratique",
+          type: "warning",
+          body: "Si un dataset contient N records et un autre M records, le Full Indexing génère N×M paires pour le linking, et N×(N-1)/2 paires pour la déduplication. Avec 1 million de records, cela représente ~500 milliards de paires. Ce n'est praticable que pour de petits datasets."
+        },
+        {
+          title: "Blocking (≈ jointure)",
+          type: "definition",
+          body: "Forme des paires candidates uniquement entre records qui partagent la MÊME VALEUR sur une ou plusieurs variables clés (ex : personnes de la MÊME ville, produits du MÊME type). Le nombre de paires peut être considérablement réduit par rapport au Full Indexing."
+        },
+        {
+          title: "Sorted Neighbourhood",
+          type: "accordion",
+          items: [
+            { title: "Principe", content: "Généralisation du Blocking standard. Identifie des candidats même quand il n'y a PAS de valeur exactement commune sur la variable choisie. Tri les records de sorte que les records similaires soient proches les uns des autres, puis compare uniquement les records dans une fenêtre glissante (window)." },
+            { title: "Fonctionnement étape par étape", content: "1. Placer les données des deux datasets dans une seule série. 2. Trier la série selon la variable clé. 3. Pour chaque élément, regarder à l'intérieur de la fenêtre spécifiée. Si deux éléments de datasets différents sont dans la fenêtre, ils sont considérés comme une paire candidate." },
+            { title: "Avantage vs Blocking", content: "Le Blocking rate les paires où il y a une légère différence sur la clé (ex : 'Bontemps' vs 'Bontems'). Le Sorted Neighbourhood les capture grâce au tri alphabétique qui les placera adjacents dans la série, à portée de la fenêtre." }
+          ]
+        },
+        {
+          title: "Comparaison des 3 techniques de couplage",
+          type: "three-col",
+          items: [
+            { color: "#3b82f6", label: "Full Indexing", text: "Toutes les paires possibles. Exhaustif. Très coûteux O(n²). Pour petits datasets uniquement." },
+            { color: "#8b5cf6", label: "Blocking", text: "Paires partageant une valeur exacte. Rapide. Peut rater des paires similaires non identiques. Reducción significative." },
+            { color: "#ef4444", label: "Sorted Neighbourhood", text: "Fenêtre glissante après tri. Capture les similarités approchées. Compromis entre exhaustivité et performance." }
+          ]
+        },
+        {
+          title: "⚠️ Piège : Le Blocking exige une valeur EXACTEMENT commune",
+          type: "warning",
+          body: "Le Blocking forme des paires uniquement si la valeur de la clé est IDENTIQUE dans les deux records. Si la clé présente une légère variation (faute de frappe, abréviation), le Blocking ne créera PAS la paire. C'est précisément la limite que le Sorted Neighbourhood vient corriger en travaillant sur la proximité dans un tri."
+        }
+      ]
+    },
+    quiz: [
+      { q: "Le couplage est l'étape qui calcule la similarité entre les records.", a: false, piege: true, expl: "FAUX. Le couplage FORME les paires de records candidates. C'est ensuite le CALCUL DE SIMILARITÉ (étape suivante) qui évalue si les records d'une paire représentent la même entité. Le couplage précède le calcul de similarité." },
+      { q: "Le Full Indexing génère le produit cartésien des deux datasets lors d'une opération de linking.", a: true, piege: false, expl: "VRAI. Dans le cas du linking entre deux datasets A et B, le Full Indexing crée toutes les combinaisons possibles, ce qui correspond au produit cartésien A×B. Pour la déduplication d'un seul dataset, il crée la matrice triangulaire supérieure." },
+      { q: "Le Blocking peut créer des paires entre des records ayant 'Bontemps' et 'Bontems' comme nom.", a: false, piege: true, expl: "FAUX. Le Blocking nécessite une valeur EXACTEMENT commune. 'Bontemps' ≠ 'Bontems' donc aucune paire ne serait créée par le Blocking. C'est précisément le cas que le Sorted Neighbourhood peut gérer, car les deux seraient proches dans un tri alphabétique." },
+      { q: "Le Sorted Neighbourhood est une généralisation du Blocking standard.", a: true, piege: false, expl: "VRAI. Le Sorted Neighbourhood étend le Blocking en identifiant des candidats même sans valeur exactement commune. Il trie les records et utilise une fenêtre glissante pour créer des paires entre records proches dans le tri." },
+      { q: "Le Full Indexing est la méthode recommandée pour des datasets de plusieurs millions de records.", a: false, piege: false, expl: "FAUX. Le Full Indexing est coûteux O(n²). Pour 1 million de records, il générerait ~500 milliards de paires. Il n'est praticable que pour de petits datasets. Pour les grands volumes, on utilise Blocking ou Sorted Neighbourhood." },
+      { q: "Dans le Sorted Neighbourhood, la taille de la fenêtre (window) est sans impact sur les résultats.", a: false, piege: false, expl: "FAUX. La taille de la fenêtre est critique. Une fenêtre trop petite peut rater des paires similaires (records trop éloignés dans le tri). Une fenêtre trop grande se rapproche du Full Indexing et perd les bénéfices de performance du Sorted Neighbourhood." },
+      { q: "Pour dédupliquer un seul dataset avec Full Indexing, on génère la matrice triangulaire supérieure.", a: true, piege: false, expl: "VRAI. Pour la déduplication d'un seul dataset A, on ne compare pas le record A1 avec lui-même, ni A1-A2 et A2-A1 (identiques). La matrice triangulaire supérieure de A×A donne exactement les paires uniques à comparer." },
+      { q: "Le Blocking peut réduire considérablement le nombre de paires par rapport au Full Indexing.", a: true, piege: false, expl: "VRAI. En ne créant des paires qu'entre records partageant la même valeur sur une variable clé (ex : même ville), le Blocking peut réduire le nombre de paires de plusieurs ordres de grandeur par rapport au produit cartésien du Full Indexing." },
+      { q: "Le but du couplage est de réduire le nombre de paires à évaluer par similarité.", a: true, piege: false, expl: "VRAI. Le couplage est l'étape préliminaire du matching. Son rôle est de pré-filtrer les paires plausibles, réduisant le nombre de comparaisons de similarité à effectuer. Sans couplage, on devrait calculer la similarité pour toutes les paires possibles." },
+      { q: "Le Sorted Neighbourhood place les données d'un seul dataset dans la série triée.", a: false, piege: true, expl: "FAUX. Le Sorted Neighbourhood place les données des DEUX datasets dans une seule série combinée, puis trie cette série. Si deux éléments de datasets différents se retrouvent dans la fenêtre après tri, ils sont considérés comme une paire candidate." }
+    ]
+  },
+
+  /* ─── MODULE 7 ─────────────────────────────────────────── */
+  {
+    id: "m7",
+    title: "Similarité & Monitoring",
+    subtitle: "Méthodes de comparaison, scores globaux et suivi continu",
+    color: "#0f766e",
+    emoji: "📊",
+    content: {
+      sections: [
+        {
+          title: "Similarité champ par champ : les deux familles",
+          type: "text",
+          body: "Après le couplage, on calcule la similarité en deux étapes : (1) champ par champ, puis (2) agrégation record par record. Pour la comparaison champ par champ, il existe deux grandes familles : les méthodes Booléennes (résultat 0 ou 1) et les méthodes basées sur la Similarité (score continu entre 0 et 1)."
+        },
+        {
+          title: "Méthodes Booléennes — Prédicats et Règles",
+          type: "tools",
+          items: [
+            { abbr: "is-equal-to", label: "Égalité stricte", text: "bonjour ~ bonjour. Souvent utilisé pour comparer les identifiants parfaitement définis et présents dans toutes les sources." },
+            { abbr: "is-a-prefix-of", label: "Préfixe", text: "bon ~ bonjour. Vrai si la valeur est un préfixe de l'autre." },
+            { abbr: "is-a-suffix-of", label: "Suffixe", text: "jour ~ bonjour. Vrai si la valeur est un suffixe de l'autre." },
+            { abbr: "is-an-abbreviation-of", label: "Abréviation", text: "S.A. ~ Société Anonyme. Vrai si la valeur est une abréviation reconnue de l'autre." },
+            { abbr: "stems-from", label: "Racine commune", text: "journalier ~ jour. Vrai si les deux partagent la même racine lexicale." }
+          ]
+        },
+        {
+          title: "Méthodes Booléennes — Algorithmes Phonétiques",
+          type: "info",
+          body: "Principe : bon nombre d'erreurs sont dues à la retranscription de l'oral vers l'écrit. Si la représentation de la prononciation p(m) d'un mot m est égale à p(m'), alors m ~ m'. Ex Soundex (1918) : garder la 1ère lettre, supprimer les voyelles, coder les consonnes selon 6 groupes, garder 4 symboles. Résultat : 'Bontemps' → B535 et 'Bondant' → B535 = match phonétique."
+        },
+        {
+          title: "Méthodes de Similarité — Word-based (Edit Distance)",
+          type: "accordion",
+          items: [
+            { title: "Principe général", content: "Les méthodes de score offrent une appréciation plus fine que le booléen (0 ou 1) car elles mesurent une similarité variable entre 0 et 1. La difficulté réside dans la définition d'un seuil (rayon k) à partir duquel la similarité est interprétée comme match." },
+            { title: "Edit Distance (Distance de Levenshtein)", content: "Nombre d'opérations (Insertion, Suppression, Substitution) nécessaires pour passer d'un mot à l'autre. Ex : 'Bonjour' → 'Bnojor' : Insérer 'n' (Bnonjour), Supprimer 'n' redondant (Bnonjour→Bnojour), Supprimer un 'o' → distance = 3." },
+            { title: "Edit Distance pondérée", content: "On peut attribuer des poids différents selon les types d'erreurs : OCR (substitution O pour C), fautes de frappe habituelles, disposition des touches sur le clavier (lettres proches = pénalité moindre)." }
+          ]
+        },
+        {
+          title: "Méthodes de Similarité — Token-based (Similarité Cosinus)",
+          type: "text",
+          body: "Les méthodes token-based comparent des chaînes de plusieurs mots et sont insensibles à l'ordre. Principe de la similarité cosinus : (1) lister tous les mots distincts des deux textes, (2) construire deux vecteurs de fréquences, (3) calculer le cosinus de l'angle entre les vecteurs. Un cosinus proche de 1 = très similaire."
+        },
+        {
+          title: "⚠️ Piège : Booléen vs Score — quand utiliser quoi ?",
+          type: "warning",
+          body: "Les méthodes BOOLÉENNES donnent un résultat binaire (match / pas match). Elles sont rapides et déterministes mais manquent de nuance. Les méthodes de SCORE donnent une valeur continue qui nécessite de définir un seuil k. Le choix dépend du contexte : les identifiants structurés (code postal, numéro sécurité sociale) → booléen. Les noms, adresses, textes libres → score."
+        },
+        {
+          title: "Similarité record par record — Approche Déterministe",
+          type: "info",
+          body: "Une table de vérité énumère de façon déterministe les combinaisons de comparaisons champ par champ qui aboutissent à 'match', 'non-match' ou 'maybe'. Ex : (Nom=Y, Prénom=Y, CP=Y) → Match ; (Nom=N) → Non-match ; (Nom=Y, Prénom=N, Rue=Y) → Maybe."
+        },
+        {
+          title: "Similarité record par record — Approche Probabiliste (Global Scoring)",
+          type: "accordion",
+          items: [
+            { title: "Principe du Global Scoring", content: "On attribue à chaque matching champ par champ un poids relatif. Le score global = somme pondérée des scores champ par champ. Ex : nom×0.2 + prénom×0.4 + adresse×0.3 + CP×0.1 = score global entre 0 et 1." },
+            { title: "Les deux seuils", content: "Pour décider match/non-match, on définit deux seuils sur l'échelle continue : [0, seuil1[ = non-match ; [seuil1, seuil2[ = peut-être (zone grise) ; [seuil2, 1] = match." },
+            { title: "La zone grise", content: "Les cas dans la zone grise (entre seuil1 et seuil2) ne peuvent pas être tranchés automatiquement. Ils doivent être vérifiés manuellement ou via une autre technique de matching. C'est le coût résiduel du système." }
+          ]
+        },
+        {
+          title: "⚠️ Piège : Déterministe ≠ Booléen",
+          type: "warning",
+          body: "L'approche DÉTERMINISTE concerne la décision record par record (la table de vérité qui combine les résultats champ par champ). Les méthodes BOOLÉENNES concernent la comparaison champ par champ. On peut tout à fait utiliser des scores continus au niveau champ et une table de vérité déterministe pour décider au niveau record."
+        },
+        {
+          title: "Monitoring",
+          type: "definition",
+          body: "Le data monitoring a pour but d'examiner l'évolution des données de manière automatisée et régulière, planifiée. Il est en lien étroit avec le profiling : les mêmes business rules dont les violations sont détectées lors du profiling doivent être contrôlées par le module de monitoring. Il est possible de réaliser un noyau d'activités de monitoring sur la base d'activités de profiling régulièrement réitérées."
+        }
+      ]
+    },
+    quiz: [
+      { q: "La similarité cosinus est sensible à l'ordre des mots dans les chaînes comparées.", a: false, piege: true, expl: "FAUX. Les méthodes token-based, dont la similarité cosinus, ont précisément pour caractéristique d'être INSENSIBLES à l'ordre dans lequel les mots apparaissent. Elles travaillent sur la fréquence des tokens, pas sur leur position." },
+      { q: "L'Edit Distance entre 'Bonjour' et 'Bnojor' est de 3.", a: true, piege: false, expl: "VRAI. On peut passer de 'Bnojor' à 'Bonjour' en 3 opérations : insertion du 'n' (Bnonjour), suppression d'un 'n' (Bnonjour→Bnojour), suppression d'un 'o' (Bnojour→Bonjour). La distance = 3." },
+      { q: "Dans l'approche probabiliste, un score inférieur à seuil1 indique un match confirmé.", a: false, piege: true, expl: "FAUX. Un score inférieur à seuil1 indique un NON-MATCH. Le match est confirmé pour un score SUPÉRIEUR à seuil2 (le seuil le plus élevé). Entre les deux seuils se trouve la zone grise 'peut-être'." },
+      { q: "Les algorithmes phonétiques partent du principe que les erreurs viennent souvent de la retranscription de l'oral vers l'écrit.", a: true, piege: false, expl: "VRAI. Les méthodes phonétiques (Soundex, Metaphone) reposent sur ce principe : si deux mots se prononcent de la même façon, leur représentation phonétique sera identique, permettant de les considérer comme similaires malgré des différences orthographiques." },
+      { q: "La zone grise dans l'approche probabiliste doit toujours être résolue automatiquement.", a: false, piege: false, expl: "FAUX. Les cas dans la zone grise (entre les deux seuils) ne peuvent pas être résolus automatiquement par l'algorithme. Ils doivent être VÉRIFIÉS MANUELLEMENT ou via une autre technique de matching. C'est une des limites de l'approche probabiliste." },
+      { q: "Le Soundex de 'Bontemps' et de 'Bondant' donnent le même code.", a: true, piege: false, expl: "VRAI. Selon l'exemple du cours, 'Bontemps' → B535 et 'Bondant' → B535. L'algorithme Soundex (1918) conserve la 1ère lettre, supprime les voyelles, code les consonnes selon 6 groupes et garde 4 symboles. Les deux mots ont la même signature phonétique." },
+      { q: "Dans l'approche déterministe, le résultat d'un record pair ne peut être que 'match' ou 'non-match'.", a: false, piege: true, expl: "FAUX. L'approche déterministe utilise une table de vérité qui peut produire trois résultats : 'match', 'non-match' ET 'maybe'. Le 'maybe' représente les cas ambigus que la table ne peut pas trancher avec certitude." },
+      { q: "La méthode is-equal-to est souvent utilisée pour comparer des identifiants bien définis.", a: true, piege: false, expl: "VRAI. La relation booléenne 'is-equal-to' est particulièrement adaptée pour comparer des identifiants parfaitement définis et présents dans toutes les sources (ex : numéro de sécurité sociale, code produit). Pour ces champs, une égalité stricte suffit." },
+      { q: "Le monitoring utilise des règles business différentes de celles utilisées lors du profiling.", a: false, piege: false, expl: "FAUX. Le monitoring est en lien ÉTROIT avec le profiling. Les mêmes business rules dont les violations sont détectées lors du profiling DOIVENT être contrôlées par le module de monitoring. C'est la continuité du cycle d'amélioration." },
+      { q: "Un score de similarité cosinus de 1 indique que les deux textes sont identiques.", a: true, piege: false, expl: "VRAI. Un cosinus de 1 signifie que les deux vecteurs sont colinéaires, c'est-à-dire que les deux textes ont exactement la même distribution de tokens. Un cosinus de 0 indique aucun token commun. Dans l'exemple du cours, le résultat était ~0.75 pour deux textes partiellement similaires." }
+    ]
+  }
+
+];
+
+/* ============================================================
+   COMPOSANTS UI
+   ============================================================ */
+
+const Chevron = ({ open }) => (
+  <svg className={`chevron inline-block transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+);
+
+const XIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+);
+
+/* ─── Section Renderers ─── */
+
+const SectionRenderer = ({ section }) => {
+  const [open, setOpen] = React.useState({});
+
+  switch (section.type) {
+    case 'definition':
+      return (
+        <div className="card p-5 border-l-4 border-indigo-500">
+          <div className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-2">Définition</div>
+          <h3 className="text-lg font-bold text-slate-800 mb-3" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <p className="text-slate-700 leading-relaxed">{section.body}</p>
+          {section.note && <p className="text-xs text-slate-400 mt-3 italic">{section.note}</p>}
+        </div>
+      );
+
+    case 'warning':
+      return (
+        <div className="card p-5 border-l-4 border-amber-400 bg-amber-50">
+          <h3 className="text-base font-bold text-amber-800 mb-2">{section.title}</h3>
+          <p className="text-amber-900 text-sm leading-relaxed">{section.body}</p>
+        </div>
+      );
+
+    case 'info':
+      return (
+        <div className="card p-5 border-l-4 border-blue-400 bg-blue-50">
+          <h3 className="text-base font-bold text-blue-800 mb-2">{section.title}</h3>
+          <p className="text-blue-900 text-sm leading-relaxed">{section.body}</p>
+        </div>
+      );
+
+    case 'text':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-3" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <p className="text-slate-700 leading-relaxed">{section.body}</p>
+        </div>
+      );
+
+    case 'compare':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+              <div className="font-bold text-indigo-700 mb-2">{section.left.label}</div>
+              <p className="text-sm text-indigo-900 leading-relaxed">{section.left.text}</p>
+            </div>
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+              <div className="font-bold text-emerald-700 mb-2">{section.right.label}</div>
+              <p className="text-sm text-emerald-900 leading-relaxed">{section.right.text}</p>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'two-col':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {section.items.map((item, i) => (
+              <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-slate-700 mb-2">{item.label}</div>
+                <p className="text-sm text-slate-600 leading-relaxed">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'three-col':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {section.items.map((item, i) => (
+              <div key={i} className="p-4 rounded-xl border" style={{background: item.color+'15', borderColor: item.color+'40'}}>
+                <div className="font-bold mb-2" style={{color: item.color}}>{item.label}</div>
+                <p className="text-sm text-slate-700 leading-relaxed">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'timeline':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-6" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
+            {section.items.map((item, i) => (
+              <div key={i} className="relative pl-8">
+                <div className="absolute -left-3 top-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  style={{background: item.color}}>{i+1}</div>
+                <h4 className="font-bold text-slate-800 mb-1">{item.title}</h4>
+                <p className="text-sm text-slate-600 leading-relaxed">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'accordion':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="space-y-2">
+            {section.items.map((item, i) => (
+              <div key={i} className="border border-slate-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setOpen(o => ({...o, [i]: !o[i]}))}
+                  className="w-full text-left p-4 flex justify-between items-center hover:bg-slate-50 transition-colors"
+                >
+                  <span className="font-semibold text-slate-800 text-sm">{item.title}</span>
+                  <Chevron open={open[i]} />
+                </button>
+                {open[i] && (
+                  <div className="px-4 pb-4 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3 bg-slate-50">
+                    {item.content}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'tools':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="space-y-3">
+            {section.items.map((item, i) => (
+              <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-start gap-3">
+                  <span className="abbr-tag shrink-0 mt-0.5">{item.abbr}</span>
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">= {item.label}</div>
+                    <p className="text-sm text-slate-700 leading-relaxed">{item.text}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'flip-cards':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {section.items.map((item, i) => (
+              <div key={i} className="flip-card">
+                <div className="flip-card-inner">
+                  <div className="flip-face flip-front"><span className="text-lg">{item.front}</span></div>
+                  <div className="flip-face flip-back"><span>{item.back}</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 text-center mt-3 italic">Survolez les cartes pour voir la définition</p>
+        </div>
+      );
+
+    case 'numbers':
+      return (
+        <div className="card p-5">
+          <h3 className="text-lg font-bold text-slate-800 mb-4" style={{fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="grid grid-cols-3 gap-4">
+            {section.items.map((item, i) => (
+              <div key={i} className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="text-4xl font-black text-indigo-700" style={{fontFamily: 'DM Serif Display, serif'}}>{item.n}</div>
+                <div className="text-sm text-slate-600 mt-1 font-medium">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'pillar': {
+      const colors = { indigo: { bg: '#eef2ff', border: '#a5b4fc', title: '#3730a3' }, emerald: { bg: '#ecfdf5', border: '#6ee7b7', title: '#065f46' }, amber: { bg: '#fffbeb', border: '#fcd34d', title: '#92400e' }, purple: { bg: '#faf5ff', border: '#c4b5fd', title: '#5b21b6' } };
+      const c = colors[section.color] || colors.indigo;
+      return (
+        <div className="card p-5" style={{borderLeft: `4px solid ${c.border}`}}>
+          <h3 className="text-base font-bold mb-4" style={{color: c.title, fontFamily: 'DM Serif Display, serif'}}>{section.title}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Comment faire ?</div>
+              <ul className="space-y-2">
+                {section.how.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                    <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+              <div className="text-xs font-bold text-red-600 uppercase tracking-widest mb-2">Facteurs de risques</div>
+              <ul className="space-y-2">
+                {section.risks.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-red-700">
+                    <span className="mt-0.5 shrink-0">⚠</span>{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    default:
+      return null;
+  }
+};
+
+/* ─── Quiz Multi-Questions ─── */
+const QuizSection = ({ questions, onComplete }) => {
+  const [current, setCurrent] = React.useState(0);
+  const [answers, setAnswers] = React.useState({});
+  const [done, setDone] = React.useState(false);
+
+  const q = questions[current];
+  const answered = answers[current] !== undefined;
+  const userAnswer = answers[current];
+  const isCorrect = answered && (userAnswer === q.a);
+  const score = Object.keys(answers).filter(k => answers[k] === questions[k].a).length;
+
+  const handleAnswer = (val) => {
+    if (answered) return;
+    const newAnswers = { ...answers, [current]: val };
+    setAnswers(newAnswers);
+  };
+
+  const handleNext = () => {
+    if (current < questions.length - 1) {
+      setCurrent(current + 1);
+    } else {
+      setDone(true);
+      if (onComplete) onComplete(score + (answers[current] === q.a ? 1 : 0));
+    }
+  };
+
+  const handleReset = () => {
+    setCurrent(0);
+    setAnswers({});
+    setDone(false);
+  };
+
+  if (done) {
+    const pct = Math.round((score / questions.length) * 100);
+    return (
+      <div className="card p-6 text-center">
+        <div className="text-5xl mb-3">{pct >= 80 ? '🎉' : pct >= 60 ? '💪' : '📖'}</div>
+        <h3 className="text-2xl font-bold text-slate-800 mb-2" style={{fontFamily: 'DM Serif Display, serif'}}>
+          {score} / {questions.length} — {pct}%
+        </h3>
+        <p className="text-slate-600 mb-4">
+          {pct >= 80 ? 'Excellent ! Vous maîtrisez ce module.' : pct >= 60 ? 'Bien ! Relisez les points manqués.' : 'À revoir ! Reprenez le cours sur ce module.'}
+        </p>
+        <div className="flex gap-2 justify-center flex-wrap mb-4">
+          {questions.map((qu, i) => (
+            <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${answers[i] === qu.a ? 'bg-emerald-500' : 'bg-red-400'}`}>
+              {i+1}
+            </div>
+          ))}
+        </div>
+        <button onClick={handleReset} className="px-6 py-2 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-colors">
+          Recommencer
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-slate-500">Question {current + 1}/{questions.length}</span>
+          {q.piege && <span className="badge-piege">⚠️ Piège fréquent</span>}
+        </div>
+        <div className="flex gap-1">
+          {questions.map((_, i) => (
+            <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === current ? 'bg-slate-700 w-6' : answers[i] !== undefined ? (answers[i] === questions[i].a ? 'bg-emerald-400' : 'bg-red-400') : 'bg-slate-200'}`}/>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-slate-800 font-medium mb-6 leading-relaxed text-base">{q.q}</p>
+
+      <div className="flex gap-3 mb-4">
+        {[true, false].map((val) => {
+          let cls = 'quiz-btn font-bold text-sm ';
+          if (answered) {
+            if (val === q.a) cls += 'correct';
+            else if (val === userAnswer) cls += 'wrong';
+            else cls += 'opacity-40';
+          }
+          return (
+            <button key={String(val)} disabled={answered} onClick={() => handleAnswer(val)} className={cls + ' flex-1'}>
+              {val ? '✓ Vrai' : '✗ Faux'}
+            </button>
+          );
+        })}
+      </div>
+
+      {answered && (
+        <div className={`rounded-xl p-4 mb-4 ${isCorrect ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+          <div className={`flex items-center gap-2 font-bold mb-2 ${isCorrect ? 'text-emerald-700' : 'text-red-700'}`}>
+            {isCorrect ? <><CheckIcon /> Bonne réponse !</> : <><XIcon /> Incorrect — La bonne réponse est : {q.a ? 'VRAI' : 'FAUX'}</>}
+          </div>
+          <p className={`text-sm leading-relaxed ${isCorrect ? 'text-emerald-800' : 'text-red-800'}`}>{q.expl}</p>
+        </div>
+      )}
+
+      {answered && (
+        <div className="flex justify-end">
+          <button onClick={handleNext} className="px-6 py-2 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-colors text-sm">
+            {current < questions.length - 1 ? 'Question suivante →' : 'Voir les résultats →'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Main App ─── */
+const App = () => {
+  const [activeIdx, setActiveIdx] = React.useState(0);
+  const [tab, setTab] = React.useState('cours');
+  const [completedModules, setCompletedModules] = React.useState(new Set());
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const mod = modules[activeIdx];
+  const progress = Math.round((completedModules.size / modules.length) * 100);
+
+  const handleModuleChange = (idx) => {
+    setActiveIdx(idx);
+    setTab('cours');
+    setMobileOpen(false);
+    window.scrollTo(0, 0);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Mobile header */}
+      <div className="md:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 shadow-md" style={{background: '#0b1829'}}>
+        <div>
+          <div className="text-white font-bold text-sm" style={{fontFamily: 'DM Serif Display, serif'}}>Intégration de Données</div>
+          <div className="text-xs" style={{color: '#f0a500'}}>{mod.emoji} {mod.title}</div>
+        </div>
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-1">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <div className={`sidebar w-full md:w-72 flex-shrink-0 flex flex-col ${mobileOpen ? 'block' : 'hidden'} md:block md:sticky top-0 h-auto md:h-screen overflow-y-auto z-10`}>
+        <div className="p-6 hidden md:block" style={{borderBottom: '1px solid #1e3a5f'}}>
+          <h1 className="text-xl text-white font-bold leading-tight mb-1" style={{fontFamily: 'DM Serif Display, serif'}}>Intégration de Données</h1>
+          <p className="text-xs" style={{color: '#f0a500'}}>M2 MIAGE IPM — Jiefu Song</p>
+        </div>
+
+        <div className="p-4" style={{borderBottom: '1px solid #1e3a5f'}}>
+          <div className="flex justify-between text-xs mb-2">
+            <span style={{color: '#94a3b8'}}>Progression</span>
+            <span className="font-bold text-white">{progress}%</span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{width: `${progress}%`}}/>
+          </div>
+          <div className="text-xs mt-2" style={{color: '#64748b'}}>{completedModules.size} / {modules.length} modules complétés</div>
+        </div>
+
+        <nav className="py-2 flex-1">
+          {modules.map((m, i) => (
+            <button key={m.id} onClick={() => handleModuleChange(i)}
+              className={`nav-btn w-full text-left px-4 py-3.5 flex items-start gap-3 ${activeIdx === i ? 'active' : ''}`}>
+              <span className="text-lg shrink-0 mt-0.5">{completedModules.has(m.id) ? '✅' : m.emoji}</span>
+              <div>
+                <div className={`text-xs font-bold mb-0.5 ${activeIdx === i ? 'text-amber-400' : 'text-slate-500'}`}>Module {i+1}</div>
+                <div className={`text-sm leading-tight ${activeIdx === i ? 'text-white font-semibold' : 'text-slate-300'}`}>{m.title}</div>
+              </div>
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 pb-16">
+        <div className="max-w-3xl mx-auto px-4 md:px-8 py-8">
+
+          {/* Module header */}
+          <div className="mb-6">
+            <div className="module-tag mb-2">Module {activeIdx + 1} / {modules.length}</div>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight mb-1" style={{fontFamily: 'DM Serif Display, serif'}}>
+              {mod.emoji} {mod.title}
+            </h2>
+            <p className="text-slate-500">{mod.subtitle}</p>
+          </div>
+
+          {/* Tab switcher */}
+          <div className="flex gap-2 mb-6 p-1 bg-slate-100 rounded-xl w-fit">
+            <button onClick={() => setTab('cours')} className={`tab-btn ${tab === 'cours' ? 'active' : ''}`}>📖 Cours</button>
+            <button onClick={() => setTab('quiz')} className={`tab-btn ${tab === 'quiz' ? 'active' : ''}`}>
+              🎯 Quiz ({mod.quiz.length} questions)
+            </button>
+          </div>
+
+          {/* Course content */}
+          {tab === 'cours' && (
+            <div className="space-y-4">
+              {mod.content.sections.map((section, i) => (
+                <SectionRenderer key={i} section={section} />
+              ))}
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={() => { setTab('quiz'); window.scrollTo(0, 0); }}
+                  className="px-8 py-3 text-white rounded-xl font-bold shadow-lg hover:opacity-90 transition-opacity text-sm"
+                  style={{background: mod.color}}>
+                  Tester mes connaissances →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Quiz content */}
+          {tab === 'quiz' && (
+            <div className="space-y-4">
+              <div className="card p-4 bg-slate-50 border-slate-200">
+                <p className="text-sm text-slate-600">
+                  <strong>{mod.quiz.length} questions</strong> Vrai/Faux tirées des concepts du cours.
+                  Les questions marquées <span className="badge-piege">⚠️ Piège fréquent</span> sont celles qui font le plus d'erreurs.
+                </p>
+              </div>
+              <QuizSection
+                key={`${mod.id}-${tab}`}
+                questions={mod.quiz}
+                onComplete={(score) => {
+                  if (score / mod.quiz.length >= 0.6) {
+                    setCompletedModules(prev => new Set([...prev, mod.id]));
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-8 pt-6 border-t border-slate-200">
+            <button
+              disabled={activeIdx === 0}
+              onClick={() => handleModuleChange(activeIdx - 1)}
+              className="px-5 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 disabled:opacity-30 transition-colors text-sm">
+              ← Précédent
+            </button>
+            <button
+              disabled={activeIdx === modules.length - 1}
+              onClick={() => handleModuleChange(activeIdx + 1)}
+              className="px-5 py-2.5 text-white rounded-xl font-bold hover:opacity-90 disabled:opacity-30 transition-opacity text-sm"
+              style={{background: mod.color}}>
+              Suivant →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
